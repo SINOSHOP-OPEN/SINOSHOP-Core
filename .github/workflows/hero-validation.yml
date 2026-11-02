@@ -1,0 +1,48 @@
+name: Hero Task Validation
+
+on:
+  pull_request:
+    branches: [ hero-task-001 ]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Run public tests
+        run: |
+          forge clean
+          forge build
+          forge test --match-contract TidalSimulation -vvv 2>&1 | tee public_test.log
+
+      - name: Extract metrics
+        if: success()
+        run: |
+          # 解析日志得到平均位移、RMS等（此处用awk占位，后续可扩展）
+          echo "RMS_ERROR=$(awk '/RMS/ {print $2}' public_test.log)" >> $GITHUB_ENV
+          echo "ENERGY=$(awk '/Energy/ {print $2}' public_test.log)" >> $GITHUB_ENV
+
+      - name: Run hidden storm test (private)
+        if: success()
+        run: |
+          # 调用私有仓库的极端测试脚本 (通过 GitHub Secret 访问)
+          # 实际部署时取消注释并配置 secret
+          # curl -s -H "Authorization: token ${{ secrets.HERO_TEST_TOKEN }}" \
+          #      ${{ secrets.HIDDEN_TEST_ENDPOINT }} | bash
+          echo "Hidden test placeholder"
+
+      - name: Mint Contributor NFT
+        if: success() && env.RMS_ERROR < 100
+        run: |
+          # 调用已部署的贡献证明合约 (地址存于 secret)
+          echo "Minting NFT for ${{ github.actor }} with RMS=$RMS_ERROR"
+          # cast send ... 实际 mint 逻辑待部署后启用

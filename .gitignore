@@ -1,0 +1,20 @@
+# 敏感配置
+.env
+*.key
+*.pem
+config/credentials.yml
+
+# 依赖
+node_modules/
+vendor/
+
+# 构建产物
+build/
+dist/
+*.so
+*.dll
+
+# Foundry
+out/
+cache/
+broadcast/
